@@ -161,7 +161,7 @@
             { id: 'b_coombs', name: 'Coombs Test', color: 'Purple', section: 'BLOOD BANK', lab: 'BB', minVol: 4, special: '🟣 Separate tube for Blood Bank.' },
 
             // --- CULTURE ---
-            { id: 'b_cx', name: 'Blood Culture (BCS)', color: 'Amber', section: 'MICRO', lab: '3206', minVol: 10, special: '💉 Order of draw: BCS - Blue - Red - Green - Purple.' },
+            { id: 'b_cx', name: 'Blood Culture (BCS)', color: 'Blood CS Bottle', section: 'MICRO', lab: '3206', minVol: 10, special: '💉 Order of draw: BCS - Blue - Red - Green - Purple.' },
         ];
 
         let selectedBlood = new Set();
@@ -268,7 +268,7 @@
                     <div class="flex justify-between items-start">
                         <div>
                             <h4 class="font-black text-[9px] uppercase text-slate-400 mb-1">${g.section} (Lab ${g.lab})</h4>
-                            <h3 class="font-black text-xs uppercase">${g.color} Top Tube</h3>
+                            <h3 class="font-black text-xs uppercase">${g.color}</h3>
                             <p class="text-[9px] text-slate-500 font-bold mt-1 leading-relaxed">${g.tests.map(t => t.name).join(', ')}</p>
                         </div>
                         <div class="text-right"><span class="block text-xs font-black text-slate-800">${g.vol.toFixed(1)} mL</span></div>
