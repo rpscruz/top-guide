@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tops Guide</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
+        .filter-active { background-color: #ef4444; color: white !important; border-color: #ef4444; }
+        
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 10px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        .checkbox-red:checked { background-color: #ef4444; border-color: #ef4444; }
+        
+        .test-unavailable { opacity: 0.5; filter: grayscale(1); cursor: not-allowed !important; pointer-events: none; }
+    </style>
+</head>
+<body class="min-h-screen text-slate-800">
+
+    <header class="bg-white border-b sticky top-0 z-50 shadow-sm">
+        <div class="max-w-2xl mx-auto px-4 py-4 flex items-center justify-between">
+            <div class="flex items-center gap-2">
+                <i class="fas fa-droplet text-red-600 text-2xl"></i>
+                <h1 class="font-bold text-xl tracking-tight uppercase">PGH Labs Tops Guide</h1>
+            </div>
+            <div class="text-right">
+                <span id="current-day-display" class="text-[10px] font-bold bg-red-100 text-red-600 px-2 py-1 rounded uppercase tracking-widest block mb-1">...</span>
+                <span class="text-[9px] font-bold text-slate-400 uppercase tracking-widest">PGH LABS 2.0</span>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-2xl mx-auto p-4 pb-24">
+        <section id="tab-compute" class="space-y-6">
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+                <div class="flex items-center justify-between mb-4">
+                    <div class="flex gap-2 overflow-x-auto no-scrollbar py-1">
+                        <button onclick="setFilter('All')" id="filter-All" class="filter-active px-4 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-widest border border-slate-200 transition-all">All</button>
+                        <button onclick="setFilter('Red')" id="filter-Red" class="bg-white px-4 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-widest border border-slate-200 text-red-600 transition-all">Red</button>
+                        <button onclick="setFilter('Blue')" id="filter-Blue" class="bg-white px-4 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-widest border border-slate-200 text-blue-600 transition-all font-black">Blue</button>
+                        <button onclick="setFilter('Purple')" id="filter-Purple" class="bg-white px-4 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-widest border border-slate-200 text-purple-600 transition-all">Purple</button>
+                        <button onclick="setFilter('Green')" id="filter-Green" class="bg-white px-4 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-widest border border-slate-200 text-green-600 transition-all">Green</button>
+                    </div>
+                    <button onclick="resetSelection()" class="text-[10px] font-bold text-slate-400 uppercase tracking-widest hover:text-red-500 whitespace-nowrap ml-4">
+                        <i class="fas fa-rotate-left mr-1"></i> Reset
+                    </button>
+                </div>
+                
+                <div class="relative mb-6">
+                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <i class="fas fa-search text-slate-400 text-sm"></i>
+                    </div>
+                    <input type="text" id="blood-search" onkeyup="applyFilters()" placeholder="Search tests (e.g. CBC, Na, K, Mg, Phos)..." class="block w-full pl-10 pr-3 py-2.5 border border-slate-200 rounded-xl bg-slate-50 text-sm focus:outline-none focus:ring-2 focus:ring-red-500 focus:bg-white transition-all">
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-[55vh] overflow-y-auto pr-3 custom-scrollbar" id="blood-selector"></div>
+
+                <div id="blood-results-area" class="mt-8 pt-6 border-t hidden">
+                    <div class="mb-6 p-4 bg-slate-900 rounded-2xl text-white flex items-center justify-between shadow-lg">
+                        <div class="flex items-center gap-3">
+                            <div class="bg-red-500 p-2 rounded-lg"><i class="fas fa-fill-drip text-white"></i></div>
+                            <div>
+                                <p class="text-[10px] font-bold uppercase tracking-widest text-slate-400 leading-none mb-1 text-left">Estimated Vol</p>
+                                <h3 class="text-2xl font-black" id="blood-total-vol">0.0 mL</h3>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <span class="text-[10px] font-bold uppercase tracking-widest text-slate-400 block mb-1">Tubes Needed</span>
+                            <span class="text-xl font-black" id="blood-total-tubes">0</span>
+                        </div>
+                    </div>
+                    <div id="blood-combination-results" class="space-y-3"></div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        const tests = [
+            // --- RED TOP (CHEMISTRY - Lab 3212) ---
+            { id: 'b_elect', name: 'All Serum Electrolytes (Na, K, Cl, Ca, Mg, Phos)', color: 'Red', section: 'CHEM', lab: '3212', minVol: 1, keywords: 'na, k, cl, ca, mg, phos, sodium, potassium, chloride, calcium, magnesium, phosphorus' },
+            { id: 'b_fbs', name: 'FBS', color: 'Red', section: 'CHEM', lab: '3212', minVol: 1, special: '🤤 10-12 hrs fasting.' },
+            { id: 'b_lipid', name: 'Lipid Profile', color: 'Red', section: 'CHEM', lab: '3212', minVol: 3, special: '🤤 10-12 hrs fasting.' },
+            { id: 'b_liver', name: 'AST, ALT, TBDBIB, GGT, ALP, TPAG', color: 'Red', section: 'CHEM', lab: '3212', minVol: 3, special: '☀️ Wrap TBDBIB in Carbon Paper.' },
+            { id: 'b_ldh', name: 'LDH', color: 'Red', section: 'CHEM', lab: '3212', minVol: 1 },
+            { id: 'b_buncrea', name: 'BUN, Crea', color: 'Red', section: 'CHEM', lab: '3212', minVol: 1 },
+            { id: 'b_amylipase', name: 'Amylase, Lipase', color: 'Red', section: 'CHEM', lab: '3212', minVol: 2 },
+            { id: 'b_alb', name: 'Albumin', color: 'Red', section: 'CHEM', lab: '3212', minVol: 1 },
+            { id: 'b_uric', name: 'Uric Acid (BUA)', color: 'Red', section: 'CHEM', lab: '3212', minVol: 1 },
+            { id: 'b_cardiac', name: 'Trop I, CK Total, CK-MB', color: 'Red', section: 'CHEM', lab: '3212', minVol: 3 },
+            { id: 'b_probnp', name: 'NT-proBNP', color: 'Red', section: 'CHEM', lab: '3212', minVol: 2 },
+            { id: 'b_vanc', name: 'Vancomycin Trough', color: 'Red', section: 'CHEM', lab: '3212', minVol: 2, special: '30m before dose.' },
+            { id: 'b_phenobar', name: 'Phenobarbital Assay', color: 'Red', section: 'CHEM', lab: '3212', minVol: 3 },
+            { id: 'b_ironpan', name: 'Fe, TIBC, Ferritin', color: 'Red', section: 'CHEM', lab: '3212', minVol: 3 },
+            { id: 'b_tco2', name: 'TCO2', color: 'Red', section: 'CHEM', lab: '3212', minVol: 4, special: '🔴 Filled to BLACK LINE (4mL).' },
+            { id: 'b_psa', name: 'PSA', color: 'Red', section: 'CHEM', lab: '3212', minVol: 2 },
+            { id: 'b_crp', name: 'CRP', color: 'Red', section: 'CHEM', lab: '3212', minVol: 2 },
+            { id: 'b_ca125', name: 'CA-125', color: 'Red', section: 'CHEM', lab: '3212', minVol: 2 },
+            { id: 'b_bhcg', name: 'bHCG', color: 'Red', section: 'CHEM', lab: '3212', minVol: 2 },
+            
+            // --- RED TOP (IMMUNO - Lab 3204) ---
+            { id: 'b_hepa', name: 'All Hepatitis Tests', color: 'Red', section: 'IMMUNO', lab: '3204', minVol: 5 },
+            { id: 'b_procal', name: 'Procalcitonin', color: 'Red', section: 'IMMUNO', lab: '3204', minVol: 2 },
+            { id: 'b_afp', name: 'AFP', color: 'Red', section: 'IMMUNO', lab: '3204', minVol: 2 },
+            { id: 'b_ca199', name: 'CA 19-9', color: 'Red', section: 'IMMUNO', lab: '3204', minVol: 2 },
+            { id: 'b_cea', name: 'CEA', color: 'Red', section: 'IMMUNO', lab: '3204', minVol: 2 },
+            { id: 'b_he4', name: 'HE 4', color: 'Red', section: 'IMMUNO', lab: '3204', minVol: 2 },
+            { id: 'b_dengue', name: 'Dengue IgG/IgM', color: 'Red', section: 'IMMUNO', lab: '3204', minVol: 2 },
+            { id: 'b_lepto', name: 'Leptospira IgG/IgM', color: 'Red', section: 'IMMUNO', lab: '3204', minVol: 2 },
+
+            // --- RED TOP (NUC MED) ---
+            { id: 'b_thyroid', name: 'TSH, T3, T4', color: 'Red', section: 'NUC MED', lab: 'NucMed', minVol: 3, days: 'M-W-F (until 9 AM)' },
+            { id: 'b_cortisol', name: 'Cortisol', color: 'Red', section: 'NUC MED', lab: 'NucMed', minVol: 3, special: '⏰ 8am or 4pm.', days: 'M-W-F (until 9 AM)' },
+            { id: 'b_vitdipth', name: 'Vit D, IPTH', color: 'Red', section: 'NUC MED', lab: 'NucMed', minVol: 5, special: '❄️ Chill IPTH immediately.', days: 'T-Th (until 9 AM)' },
+            { id: 'b_aldo', name: 'Aldosterone', color: 'Red', section: 'NUC MED', lab: 'NucMed', minVol: 3, days: 'Fridays only (until 9 AM)' },
+            { id: 'b_tpo', name: 'Anti-TPO', color: 'Red', section: 'NUC MED', lab: 'NucMed', minVol: 3, days: 'T-Th (until 9 AM)' },
+
+            // --- RED TOP (MRL) ---
+            { id: 'b_rheuma', name: 'ANA, Anti-dsDNA, Anti-Sm', color: 'Red', section: 'MRL', lab: '3232', minVol: 5, days: 'Weekdays (until 3 PM)' },
+            { id: 'b_c3', name: 'C3', color: 'Red', section: 'MRL', lab: '3232', minVol: 2, days: 'Weekdays (until 3 PM)' },
+
+            // --- RED TOP (SAGIP) ---
+            { id: 'b_iccelisa', name: 'ICC Elisa', color: 'Red', section: 'SAGIP', lab: 'SAGIP', minVol: 3 },
+
+            // --- BLUE TOP (HEMA / COAG) ---
+            { id: 'b_ptptt', name: 'PT/PTT', color: 'Blue', section: 'HEMA', lab: '3213', minVol: 2.7, special: '🔵 4-6 hrs fasting. Filled to line. Invert 4x.' },
+            { id: 'b_fac89', name: 'Factor VIII/IX', color: 'Blue', section: 'HEMA', lab: '3213', minVol: 2.7, special: '🔵 Filled to line.' },
+            { id: 'b_fib', name: 'Fibrinogen', color: 'Blue', section: 'HEMA', lab: '3213', minVol: 2.7, special: '🔵 Filled to line.' },
+            { id: 'b_ddimer', name: 'D-Dimer', color: 'Blue', section: 'HEMA', lab: '3213', minVol: 2.7, special: '🔵 Filled to line.' },
+            { id: 'b_procs', name: 'Protein C/S', color: 'Blue', section: 'HEMA', lab: '3213', minVol: 2.7, special: '🔵 Filled to line.' },
+            
+            // --- BLUE TOP (MRL Weekdays < 3pm) ---
+            { id: 'b_at3', name: 'Antithrombin III', color: 'Blue', section: 'MRL', lab: '3232', minVol: 2.7, special: '🔵 Filled to line.', days: 'Weekdays (until 3 PM)' },
+            { id: 'b_fac8inh', name: 'Factor VIII inhibitor', color: 'Blue', section: 'MRL', lab: '3232', minVol: 2.7, days: 'Weekdays (until 3 PM)' },
+            { id: 'b_fac11', name: 'Factor XI', color: 'Blue', section: 'MRL', lab: '3232', minVol: 2.7, days: 'Weekdays (until 3 PM)' },
+            { id: 'b_lupus', name: 'Lupus Anticoagulant (SCT, DRWVT)', color: 'Blue', section: 'MRL', lab: '3232', minVol: 5.4, special: '🔵 2 tubes needed.', days: 'Weekdays (until 3 PM)' },
+            { id: 'b_apas', name: 'APAS Panel', color: 'Blue', section: 'MRL', lab: '3232', minVol: 10.8, special: '🔵 4-6 hrs fasting. Blue (4 x 2.7 mL or 5 x 1.8 mL) + 2 Red Tops.', days: 'Weekdays (until 3 PM)' },
+
+            // --- GREEN TOP ---
+            { id: 'b_iclact', name: 'iCa, NH3, Lactate', color: 'Green', section: 'CHEM', lab: '3212', minVol: 4, special: '🟢 Put labelled tube in a glove, then place in an ice-filled container; filled to line.' },
+            { id: 'b_plak', name: 'Plasma K', color: 'Green', section: 'CHEM', lab: '3212', minVol: 4, special: '🟢 Put labelled tube in a glove. No need for ice; filled to line.' },
+            { id: 'b_leptocx', name: 'Lepto Culture', color: 'Green', section: 'MRL', lab: 'MRL', minVol: 4, days: 'Weekdays (until 3 PM)' },
+
+            // --- PURPLE TOP ---
+            { id: 'b_cbc', name: 'CBC, ESR, PBS', color: 'Purple', section: 'HEMA', lab: '3213', minVol: 2, special: '🟣 Invert 8 times. 2 cc minimum.' },
+            { id: 'b_hba1c', name: 'hbA1c', color: 'Purple', section: 'CHEM', lab: '3212', minVol: 2, special: '🟣 2 cc minimum (3 cc if 4 mL-EDTA tube).' },
+            { id: 'b_renin', name: 'Renin, ACTH', color: 'Purple', section: 'CHEM', lab: '3212', minVol: 4, special: '🤤 Fasting 8-12 hrs, Fridays only (until 9 AM).', days: 'Fridays only (until 9 AM)' },
+            { id: 'b_viral', name: 'CD4, Viral Load and Resistance Test', color: 'Purple', section: 'SAGIP', lab: 'SAGIP', minVol: 12, special: '📋 Accomplish HIV testing form. 3 tops of 4 mL-EDTA tube. M-W (until 9 AM).', days: 'M-W (until 9 AM)' },
+            
+            // --- PURPLE TOP (BLOOD BANK - Isolated) ---
+            { id: 'b_bt', name: 'BT (Blood Typing)', color: 'Purple', section: 'BLOOD BANK', lab: 'BB', minVol: 4, special: '🟣 Separate tube for Blood Bank.' },
+            { id: 'b_xmatching', name: 'Cross-matching', color: 'Purple', section: 'BLOOD BANK', lab: 'BB', minVol: 4, special: '🟣 Separate tube for Blood Bank.' },
+            { id: 'b_coombs', name: 'Coombs Test', color: 'Purple', section: 'BLOOD BANK', lab: 'BB', minVol: 4, special: '🟣 Separate tube for Blood Bank.' },
+
+            // --- CULTURE ---
+            { id: 'b_cx', name: 'Blood Culture (BCS)', color: 'Amber', section: 'MICRO', lab: '3206', minVol: 10, special: '💉 Order of draw: BCS - Blue - Red - Green - Purple.' },
+        ];
+
+        let selectedBlood = new Set();
+        let currentColorFilter = 'All';
+
+        const colorMap = {
+            'Red': { bg: 'bg-red-50', border: 'border-red-200', text: 'text-red-800' },
+            'Purple': { bg: 'bg-purple-50', border: 'border-purple-200', text: 'text-purple-800' },
+            'Blue': { bg: 'bg-blue-50', border: 'border-blue-200', text: 'text-blue-800' },
+            'Green': { bg: 'bg-green-50', border: 'border-green-200', text: 'text-green-800' },
+            'Amber': { bg: 'bg-amber-50', border: 'border-amber-200', text: 'text-amber-800' }
+        };
+
+        function isAvailableToday(test) {
+            if (!test.days) return true;
+            const now = new Date();
+            const dayNum = now.getDay(); 
+            const dayName = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][dayNum];
+            const rule = test.days.toLowerCase();
+            
+            if (rule.includes('weekdays')) return dayNum >= 1 && dayNum <= 5;
+            if (rule.includes('m-w-f')) return ['Monday', 'Wednesday', 'Friday'].includes(dayName);
+            if (rule.includes('t-th')) return ['Tuesday', 'Thursday'].includes(dayName);
+            if (rule.includes('fridays only')) return dayName === 'Friday';
+            if (rule.includes('m-w')) return ['Monday', 'Wednesday'].includes(dayName);
+            
+            return true;
+        }
+
+        function renderSelectors() {
+            const bloodContainer = document.getElementById('blood-selector');
+            bloodContainer.innerHTML = tests.sort((a,b) => a.name.localeCompare(b.name)).map(test => {
+                const style = colorMap[test.color] || colorMap['Red'];
+                const isChecked = selectedBlood.has(test.id) ? 'checked' : '';
+                const available = isAvailableToday(test);
+                const dayLabel = test.days ? `<span class="bg-red-600 text-white text-[7px] px-1 rounded ml-1 font-black uppercase">${test.days}</span>` : '';
+                
+                return `
+                <label data-color="${test.color}" data-keywords="${test.keywords || ''}" class="relative flex flex-col p-3 ${style.bg} ${style.border} border-2 rounded-xl cursor-pointer hover:shadow-md transition-all ${!available ? 'test-unavailable' : ''}">
+                    <div class="flex items-center">
+                        <input type="checkbox" onchange="toggleTest('${test.id}')" ${isChecked} ${!available ? 'disabled' : ''} class="w-4 h-4 rounded checkbox-red">
+                        <div class="ml-2 flex-1">
+                            <span class="block font-bold text-[10px] leading-tight ${style.text}">${test.name}${dayLabel}</span>
+                            <span class="text-[8px] opacity-60 uppercase font-black">${test.section} (${test.lab})</span>
+                        </div>
+                    </div>
+                </label>`;
+            }).join('');
+            applyFilters();
+        }
+
+        function setFilter(color) {
+            currentColorFilter = color;
+            ['All', 'Red', 'Purple', 'Blue', 'Green'].forEach(c => {
+                const btn = document.getElementById('filter-' + c);
+                if(btn) c === color ? btn.classList.add('filter-active') : btn.classList.remove('filter-active');
+            });
+            applyFilters();
+        }
+
+        function applyFilters() {
+            const q = document.getElementById('blood-search').value.toLowerCase().trim();
+            document.querySelectorAll('#blood-selector label').forEach(label => {
+                const matchesColor = currentColorFilter === 'All' || label.getAttribute('data-color') === currentColorFilter;
+                const text = label.innerText.toLowerCase();
+                const keywords = label.getAttribute('data-keywords').toLowerCase();
+                const matchesSearch = text.includes(q) || keywords.includes(q);
+                
+                label.style.display = (matchesColor && matchesSearch) ? 'flex' : 'none';
+            });
+        }
+
+        function toggleTest(id) {
+            selectedBlood.has(id) ? selectedBlood.delete(id) : selectedBlood.add(id);
+            computeBlood();
+        }
+
+        function computeBlood() {
+            const area = document.getElementById('blood-results-area');
+            const container = document.getElementById('blood-combination-results');
+            if (selectedBlood.size === 0) { area.classList.add('hidden'); return; }
+            area.classList.remove('hidden');
+
+            const groups = {};
+            let tubeId = 0;
+            tests.filter(t => selectedBlood.has(t.id)).forEach(test => {
+                const isIsolated = test.section === 'BLOOD BANK' || test.section === 'SAGIP' || test.section === 'NUC MED' || test.section === 'MRL' || test.color === 'Blue' || test.color === 'Green' || test.color === 'Amber';
+                const key = isIsolated ? `iso-${tubeId++}` : `${test.color}-${test.lab}-${test.section}`;
+                
+                if (!groups[key]) groups[key] = { color: test.color, tests: [], vol: 0, lab: test.lab, section: test.section };
+                groups[key].tests.push(test);
+                groups[key].vol = Math.max(groups[key].vol, test.minVol || 1);
+                
+                if (groups[key].color === 'Red' && groups[key].tests.length > 4) groups[key].vol = 5;
+            });
+
+            const arr = Object.values(groups);
+            document.getElementById('blood-total-vol').innerText = `${arr.reduce((acc, g) => acc + g.vol, 0).toFixed(1)} mL`;
+            document.getElementById('blood-total-tubes').innerText = arr.length;
+            container.innerHTML = arr.map(g => {
+                const color = colorMap[g.color] || colorMap['Red'];
+                return `
+                <div class="p-4 rounded-xl border-l-8 ${color.border} bg-white shadow-sm ring-1 ring-slate-100">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <h4 class="font-black text-[9px] uppercase text-slate-400 mb-1">${g.section} (Lab ${g.lab})</h4>
+                            <h3 class="font-black text-xs uppercase">${g.color} Top Tube</h3>
+                            <p class="text-[9px] text-slate-500 font-bold mt-1 leading-relaxed">${g.tests.map(t => t.name).join(', ')}</p>
+                        </div>
+                        <div class="text-right"><span class="block text-xs font-black text-slate-800">${g.vol.toFixed(1)} mL</span></div>
+                    </div>
+                    ${g.tests.some(t => t.special) ? `
+                        <div class="mt-2 text-[8px] font-bold text-red-600 bg-red-50 p-2 rounded border border-red-100">
+                            ${[...new Set(g.tests.filter(t => t.special).map(t => t.special))].map(s => `<div>• ${s}</div>`).join('')}
+                        </div>
+                    ` : ''}
+                </div>`;
+            }).join('');
+        }
+
+        function resetSelection() {
+            selectedBlood.clear();
+            renderSelectors();
+            computeBlood();
+            document.getElementById('blood-search').value = '';
+            setFilter('All');
+        }
+
+        window.onload = () => {
+            document.getElementById('current-day-display').innerText = new Date().toLocaleDateString('en-US', { weekday: 'long' });
+            renderSelectors();
+        };
+    </script>
+</body>
+</html>
