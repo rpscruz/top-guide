@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tops Guide</title>
+    <title>Labs Tops Guide</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -33,7 +33,9 @@
             </div>
             <div class="text-right">
                 <span id="current-day-display" class="text-[10px] font-bold bg-red-100 text-red-600 px-2 py-1 rounded uppercase tracking-widest block mb-1">...</span>
-                <span class="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Based on PGH LABS 2.0 guide by Dr. Rodie Uy, <br>Got this Po!, and Grand Guide to PGH Labs</span>
+                <span class="text-[8px] font-bold text-slate-400 uppercase tracking-tight leading-tight block">
+                    Based on LABS 2.0 guide by Dr. Rodie Uy, <br>Got this Po!, and Grand Guide to Labs
+                </span>
             </div>
         </div>
     </header>
@@ -145,7 +147,9 @@
             { id: 'b_apas', name: 'APAS Panel', color: 'Blue', section: 'MRL', lab: '3232', minVol: 10.8, special: '🔵 4-6 hrs fasting. Blue (4 x 2.7 mL or 5 x 1.8 mL) + 2 Red Tops.', days: 'Weekdays (until 3 PM)' },
 
             // --- GREEN TOP ---
-            { id: 'b_iclact', name: 'iCa, NH3, Lactate', color: 'Green', section: 'CHEM', lab: '3212', minVol: 4, special: '🟢 Put labelled tube in a glove, then place in an ice-filled container; filled to line.' },
+            { id: 'b_ica', name: 'iCa (Ionized Calcium)', color: 'Green', section: 'CHEM', lab: '3212', minVol: 4, special: '🟢 Put labelled tube in a glove, then place in an ice-filled container; filled to line.' },
+            { id: 'b_nh3', name: 'NH3 (Ammonia)', color: 'Green', section: 'CHEM', lab: '3212', minVol: 4, special: '🟢 Put labelled tube in a glove, then place in an ice-filled container; filled to line.' },
+            { id: 'b_lactate', name: 'Lactate', color: 'Green', section: 'CHEM', lab: '3212', minVol: 4, special: '🟢 Put labelled tube in a glove, then place in an ice-filled container; filled to line.' },
             { id: 'b_plak', name: 'Plasma K', color: 'Green', section: 'CHEM', lab: '3212', minVol: 4, special: '🟢 Put labelled tube in a glove. No need for ice; filled to line.' },
             { id: 'b_leptocx', name: 'Lepto Culture', color: 'Green', section: 'MRL', lab: 'MRL', minVol: 4, days: 'Weekdays (until 3 PM)' },
 
@@ -156,12 +160,12 @@
             { id: 'b_viral', name: 'CD4, Viral Load and Resistance Test', color: 'Purple', section: 'SAGIP', lab: 'SAGIP', minVol: 12, special: '📋 Accomplish HIV testing form. 3 tops of 4 mL-EDTA tube. M-W (until 9 AM).', days: 'M-W (until 9 AM)' },
             
             // --- PURPLE TOP (BLOOD BANK - Isolated) ---
-            { id: 'b_bt', name: 'BT (Blood Typing)', color: 'Purple', section: 'BLOOD BANK', lab: 'BB', minVol: 4, special: '🟣 Separate tube for Blood Bank.' },
-            { id: 'b_xmatching', name: 'Cross-matching', color: 'Purple', section: 'BLOOD BANK', lab: 'BB', minVol: 4, special: '🟣 Separate tube for Blood Bank.' },
+            { id: 'b_bt', name: 'BT (Blood Typing)', color: 'Purple', section: 'BLOOD BANK', lab: 'BB', minVol: 1, special: '🟣 Separate tube for Blood Bank.' },
+            { id: 'b_xmatching', name: 'Cross-matching', color: 'Purple', section: 'BLOOD BANK', lab: 'BB', minVol: 1, special: '🟣 Separate tube for Blood Bank.' },
             { id: 'b_coombs', name: 'Coombs Test', color: 'Purple', section: 'BLOOD BANK', lab: 'BB', minVol: 4, special: '🟣 Separate tube for Blood Bank.' },
 
             // --- CULTURE ---
-            { id: 'b_cx', name: 'Blood Culture (BCS)', color: 'Blood CS Bottle', section: 'MICRO', lab: '3206', minVol: 10, special: '💉 Order of draw: BCS - Blue - Red - Green - Purple.' },
+            { id: 'b_cx', name: 'Blood Culture (BCS)', color: 'Amber', section: 'MICRO', lab: '3206', minVol: 10, special: '💉 Order of draw: BCS - Blue - Red - Green - Purple.' },
         ];
 
         let selectedBlood = new Set();
@@ -248,12 +252,25 @@
             const groups = {};
             let tubeId = 0;
             tests.filter(t => selectedBlood.has(t.id)).forEach(test => {
-                const isIsolated = test.section === 'BLOOD BANK' || test.section === 'SAGIP' || test.section === 'NUC MED' || test.section === 'MRL' || test.color === 'Blue' || test.color === 'Green' || test.color === 'Amber';
+                const isIsolated = 
+                    test.section === 'BLOOD BANK' || 
+                    test.section === 'SAGIP' || 
+                    test.section === 'NUC MED' || 
+                    test.color === 'Amber' ||
+                    ['b_ica', 'b_nh3', 'b_lactate', 'b_plak', 'b_leptocx'].includes(test.id);
+
                 const key = isIsolated ? `iso-${tubeId++}` : `${test.color}-${test.lab}-${test.section}`;
                 
                 if (!groups[key]) groups[key] = { color: test.color, tests: [], vol: 0, lab: test.lab, section: test.section };
                 groups[key].tests.push(test);
-                groups[key].vol = Math.max(groups[key].vol, test.minVol || 1);
+                
+                if (test.color === 'Blue') {
+                    groups[key].vol = 2.7;
+                    if (test.id === 'b_lupus') groups[key].vol = 5.4;
+                    if (test.id === 'b_apas') groups[key].vol = 10.8;
+                } else {
+                    groups[key].vol = Math.max(groups[key].vol, test.minVol || 1);
+                }
                 
                 if (groups[key].color === 'Red' && groups[key].tests.length > 4) groups[key].vol = 5;
             });
@@ -263,12 +280,14 @@
             document.getElementById('blood-total-tubes').innerText = arr.length;
             container.innerHTML = arr.map(g => {
                 const color = colorMap[g.color] || colorMap['Red'];
+                const tubeLabel = g.color === 'Amber' ? 'Blood CS Bottle' : `${g.color} Top Tube`;
+                
                 return `
                 <div class="p-4 rounded-xl border-l-8 ${color.border} bg-white shadow-sm ring-1 ring-slate-100">
                     <div class="flex justify-between items-start">
                         <div>
                             <h4 class="font-black text-[9px] uppercase text-slate-400 mb-1">${g.section} (Lab ${g.lab})</h4>
-                            <h3 class="font-black text-xs uppercase">${g.color}</h3>
+                            <h3 class="font-black text-xs uppercase">${tubeLabel}</h3>
                             <p class="text-[9px] text-slate-500 font-bold mt-1 leading-relaxed">${g.tests.map(t => t.name).join(', ')}</p>
                         </div>
                         <div class="text-right"><span class="block text-xs font-black text-slate-800">${g.vol.toFixed(1)} mL</span></div>
